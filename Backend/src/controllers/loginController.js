@@ -26,9 +26,7 @@ const validateUser = async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
-        enrollmentId: user.enrollmentId,
-        trustScore: user.trustScore,
-        hostelOrBlock: user.hostelOrBlock
+        enrollmentId: user.enrollmentId
       }
     });
 

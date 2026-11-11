@@ -13,4 +13,4 @@ const prisma = new PrismaClient({
   adapter: pg_adapter,
 });
 
-module.exports = { prisma };
+module.exports =  prisma ;

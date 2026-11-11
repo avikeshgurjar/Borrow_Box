@@ -1,4 +1,4 @@
-const { prisma } = require('../configs/db');
+const  prisma  = require('../configs/db');
 const { hashPass } = require('./password_hash');
 
 const createUser = async (userData) => {
@@ -11,13 +11,13 @@ const createUser = async (userData) => {
     phone
   } = userData;
 
-  console.log({
-    enrollmentId,
-    name,
-    email,
-    password,
-    phone
-  });
+  // console.log({
+  //   enrollmentId,
+  //   name,
+  //   email,
+  //   password,
+  //   phone
+  // });
 
   if (!enrollmentId || !name || !email || !password || !phone) {
     throw new Error("All fields are required.");

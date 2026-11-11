@@ -11,6 +11,8 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [success, setSuccess] = useState("");
+
 
 
 
@@ -35,7 +37,10 @@ const Login = () => {
         throw new Error(data.error || "Login failed");
       }
 
-      console.log("login successfully....");
+      setSuccess("logged in successfully....");
+
+
+      // console.log("logged in successfully...");
       
 
       // window.location.href = "/";
@@ -63,6 +68,12 @@ const Login = () => {
         {error && (
           <div className="bg-red-50 text-red-600 p-3 rounded-xl mb-5">
             {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="bg-green-50 text-green-700 p-3 rounded-xl mb-5">
+            {success}
           </div>
         )}
 
@@ -117,9 +128,11 @@ const Login = () => {
           </button>
 
         </div>
+        
 
         
       </form>
+      
     </div>
   );
 };

@@ -1,4 +1,4 @@
-const { prisma } = require('../configs/db');
+const  prisma  = require('../configs/db');
 const { comparePass } = require('./password_hash');
 
 const loginUser = async (email, password) => {
