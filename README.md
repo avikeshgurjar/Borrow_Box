@@ -20,8 +20,9 @@ Active development. The project is at an early stage — authentication is being
 | Signup + login API | working |
 | Session persistence across refresh | **in progress** — needs `GET /api/me` |
 | Frontend auth screens | built, being restructured |
-| Browse / discovery | not started |
-| Listing an item | not started |
+| Browse / discovery | not started — no list endpoint to read from |
+| Listing an item | **in progress** — `POST /api/products` works; no list or detail endpoint yet |
+| Item images | **in progress** — multer → Cloudinary, plus a 3D preview component |
 | Borrow requests, approvals, returns | not started |
 | Deadline reminders | not started — schema only |
 | Trust / reviews | not started — schema not yet added |
@@ -50,7 +51,8 @@ Planned:
 Borrow_Box/
 ├── Frontend/          React 19 + Vite + Tailwind CSS v4
 │   └── src/
-│       ├── components/    auth screens (being split into pages/)
+│       ├── components/    login, signup, AddProducts, navbar, dashboard
+│       ├── 3DPreview.jsx  model preview for item photos
 │       └── ...
 └── Backend/           Express 5 + Prisma 7 + PostgreSQL
     ├── prisma/
@@ -60,8 +62,8 @@ Borrow_Box/
         ├── routes/        route definitions
         ├── controllers/   request handling
         ├── services/      business logic, Prisma access
-        ├── middlewares/   auth guard
-        └── configs/       Prisma client with pg adapter
+        ├── middlewares/   auth guard — req.cookies.userId → req.user
+        └── configs/       Prisma client, multer, Cloudinary
 ```
 
 Backend layers are `route → controller → service`, with Prisma calls confined to `services/`. Routes and controllers never touch Prisma directly, so a query is only ever defined in one place.
@@ -164,6 +166,9 @@ npm run lint       # eslint
 |---|---|---|---|
 | `POST` | `/api/register` | `{ enrollmentId, name, email, password, phone }` | `201 { message, user }` |
 | `POST` | `/api/login` | `{ email, password }` | `200 { message, user }`, sets `userId` cookie |
+| `POST` | `/api/products` | multipart — fields + up to 4 `images` | `201 { message, product }` |
+
+`POST /api/products` is guarded: it requires the `userId` cookie.
 
 Missing, and needed by the frontend:
 
@@ -171,6 +176,8 @@ Missing, and needed by the frontend:
 |---|---|---|
 | `GET` | `/api/me` | Return the current user from the cookie, so a refresh doesn't log out |
 | `POST` | `/api/logout` | Clear the session cookie |
+| `GET` | `/api/products` | List or search available items — the browse grid has nothing to read |
+| `GET` | `/api/products/:id` | Item detail |
 
 ---
 
@@ -180,9 +187,11 @@ Login sets `res.cookie("userId", user.id)` — httpOnly, 7-day expiry, `sameSite
 
 Because the cookie is httpOnly, frontend JavaScript cannot read it (which is correct), so the only way to check whether a session is live is to ask the server. Without `GET /api/me`, a page refresh drops all auth state.
 
-`Backend/src/middlewares/login_auth.js` reads `req.session.userId`, but `express-session` is not installed and not in `package.json`, so `req.session` is `undefined` and the middleware throws. No route is guarded today.
+`Backend/src/middlewares/login_auth.js` reads `req.cookies.userId`, looks the user up, and attaches it as `req.user`. It's a **named** export — import it as `{ authMiddleware }`. `cookieParser()` is mounted in `server.js`; without it `req.cookies` is undefined and every guarded route 401s.
 
-Separately: the `userId` cookie holds a raw uuid, so a client can overwrite it with any user's id. If auth is going to read that cookie, it needs to be signed, or replaced with a JWT.
+`POST /api/products` is the only guarded route so far.
+
+Caveat worth knowing before more depends on it: the `userId` cookie holds a raw uuid, so a client can set it to any user's id and be treated as that user. Fine for local development, but it needs signing or a JWT before anything sensitive hangs off it.
 
 ---
 
@@ -191,11 +200,11 @@ Separately: the `userId` cookie holds a raw uuid, so a client can overwrite it w
 Tracked against the problem statement, so the project report can be honest about scope:
 
 - **Deadline reminders** — `BorrowingItem.returnDeadline` is stored, but nothing reads it. No notification model, no scheduler, no frontend countdown. The problem statement promises deadline tracking; only the column exists.
-- **Trust between students** — no `Review` model. `loginController.js` returns `user.trustScore` and `user.hostelOrBlock`, but **neither field is in `schema.prisma`**, so both serialize as `undefined`. Any trust UI built against this reads nothing.
+- **Trust between students** — nothing records it. No `Review` model, no rating, no score. `loginController.js` no longer returns `trustScore`/`hostelOrBlock` (they were never in the schema), so the field was removed rather than invented. Building this needs a `Review` model tied to a completed borrow, and a score derived from it — a stored float will drift.
 - **Search** — `Product` has no indexes beyond primary keys. Discovery queries table-scan, and category filters can't use an index.
 - **Categories** — `Product.category` and `condition` are free-text `String`, so filters fragment across spellings (`books` / `Books` / `textbook`).
 - **`isAvailable` duplication** — `Product.isAvailable` restates what an active `BorrowingItem` already implies. If it stays, every status transition must update both in one transaction or they drift.
-- **`ReturnDate` casing** — capitalised inconsistently with `borrowDate` / `returnDeadline`. Propagates into the generated client.
+- **No pickup location** — the `pickupLocation` column existed and was dropped in the `rename_column_to_return_date` migration. Nothing replaced it, so the app has no idea where a handover happens.
 
 ---
 
@@ -214,7 +223,8 @@ Tracked against the problem statement, so the project report can be honest about
 
 - Prisma calls live in `services/` only.
 - Controllers parse the request and shape the response; they don't build queries.
-- Don't log request bodies. `createUsers.js` currently logs the plaintext password.
+- `authMiddleware` is a named export and sets `req.user` — read the owner from there, not from the request body.
+- Don't return raw Prisma rows. `signupController.js` still returns the full `user`, which includes `passwordHash` and `phone`; only `{ id, name, email, enrollmentId }` should leave the server.
 
 ---
 
