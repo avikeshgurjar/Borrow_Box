@@ -126,13 +126,14 @@ cp .env.example .env
 ```
 
 ```env
-VITE_PORT=5000
+VITE_API_URL=http://localhost:5000/api
 ```
 
-The port the backend listens on. The frontend builds its api url as
-`http://localhost:$VITE_PORT/api`, so an unset value sends every request to
-`http://localhost:undefined/api` — which fails as a network error rather than
-a status code, so there's nothing useful in the network tab either.
+The full api origin, including the `/api` suffix, no trailing slash. Unset, the
+frontend falls back to `http://localhost:5000/api`, so local development needs
+no `.env` at all. A host has to set it: leave it out there and the built
+frontend keeps calling localhost, which fails as a network error rather than a
+status code, so nothing useful shows up in the network tab either.
 
 Start the dev server:
 

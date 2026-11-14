@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { User, Box, Plus } from "lucide-react";
 
-const PORT = import.meta.env.VITE_PORT;
-const API_URL = `http://localhost:${PORT}/api`;
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const STATUS_STYLES = {
   PENDING: "bg-amber-100 text-amber-700",

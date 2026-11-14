@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Box, Calendar, User } from "lucide-react";
 
-const PORT = import.meta.env.VITE_PORT;
-const API_URL = `http://localhost:${PORT}/api`;
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const ProductDetail = ({ user }) => {
   const { id } = useParams();

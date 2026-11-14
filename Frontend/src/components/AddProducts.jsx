@@ -4,8 +4,7 @@ import Product3DPreviewer from "../3DPreview.jsx";
 
 
 
-const PORT = import.meta.env.VITE_PORT;
-const API_URL = `http://localhost:${PORT}/api`;
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const IMAGE_LABELS = ["Cover Photo", "Photo 2", "Photo 3", "Photo 4"];
 

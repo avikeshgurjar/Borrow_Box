@@ -1,5 +1,7 @@
 const loginUser = require('../services/userAuth');
 
+const crossSite = process.env.NODE_ENV === "production";
+
 const validateUser = async (req, res) => {
 
   try {
@@ -17,7 +19,8 @@ const validateUser = async (req, res) => {
     res.cookie("userId", user.id, {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      sameSite: "lax"
+      sameSite: crossSite ? "none" : "lax",
+      secure: crossSite
     });
 
     res.status(200).json({
@@ -46,7 +49,7 @@ const validateUser = async (req, res) => {
   }
 };
 const logout = (req,res) => {
-  res.clearCookie("userId", { httpOnly: true, sameSite: "lax"});
+  res.clearCookie("userId", { httpOnly: true, sameSite: crossSite ? "none" : "lax", secure: crossSite });
   res.json({ message: "Logged out successfully." });
 }
 module.exports = {validateUser,logout};

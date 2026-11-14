@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-const PORT = import.meta.env.VITE_PORT;
-const API_URL = `http://localhost:${PORT}/api`;
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const SignUp = () => {
   const [loading, setLoading] = useState(false);
