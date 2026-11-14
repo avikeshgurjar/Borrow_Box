@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Box, Calendar, User } from "lucide-react";
+import Product3DPreviewer from "../3DPreview.jsx";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -101,39 +102,9 @@ const ProductDetail = ({ user }) => {
 
       <div className="mt-6 grid gap-8 md:grid-cols-2">
         <div>
-          <div className="aspect-[4/3] bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
-            {images.length > 0 ? (
-              <img
-                src={images[active].url}
-                alt={product.title}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-300">
-                <Box className="w-16 h-16" />
-              </div>
-            )}
+          <div className="bg-white rounded-xl border border-gray-200 p-2 shadow-sm overflow-hidden">
+            <Product3DPreviewer images={images.map((img) => img.url)} />
           </div>
-
-          {images.length > 1 && (
-            <div className="mt-3 flex gap-3">
-              {images.map((image, i) => (
-                <button
-                  key={image.id}
-                  onClick={() => setActive(i)}
-                  className={`w-20 h-20 rounded-lg overflow-hidden border-2 ${
-                    i === active ? "border-indigo-600" : "border-transparent"
-                  }`}
-                >
-                  <img
-                    src={image.url}
-                    alt={`${product.title} ${i + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         <div>
