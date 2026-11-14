@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Box, Calendar, User } from "lucide-react";
 import Product3DPreviewer from "../3DPreview.jsx";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3456/api";
 
 const ProductDetail = ({ user }) => {
   const { id } = useParams();

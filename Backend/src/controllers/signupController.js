@@ -12,6 +12,12 @@ const registerUser = async (req, res) => {
   } catch (error) {
 
     if (error.code === "P2002") {
+      const target = error.meta?.target || [];
+      if (Array.isArray(target) && target.includes("enrollmentId")) {
+        return res.status(400).json({
+          error: "A user with this Enrollment ID already exists."
+        });
+      }
       return res.status(400).json({
         error: "A user with this email already exists."
       });

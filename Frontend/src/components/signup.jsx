@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import { Link, useNavigate } from "react-router-dom";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3456/api";
 
 const SignUp = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -47,6 +48,9 @@ const SignUp = () => {
       
 
       setSuccess("Account created successfully! Redirecting to login...");
+      setTimeout(() => {
+        navigate("/login");
+      }, 1200);
     } catch (err) {
       setError(err.message);
     } finally {
