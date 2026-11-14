@@ -1,7 +1,7 @@
 import React from "react";
 import { useState, useEffect } from "react";
 
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { User, Box, Plus } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -13,7 +13,8 @@ const STATUS_STYLES = {
   RETURNED: "bg-indigo-50 text-indigo-700",
 };
 
-const Dashboard = ({ user }) => {
+const Dashboard = ({ user, onUserUpdate }) => {
+  const navigate = useNavigate();
   const [myProducts, setMyProducts] = useState([]);
   const [myBorrows, setMyBorrows] = useState([]);
   const [myLendings, setMyLendings] = useState([]);
@@ -21,6 +22,7 @@ const Dashboard = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState("");
   const [actionError, setActionError] = useState("");
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   useEffect(() => {
     fetchAllData();
@@ -40,6 +42,17 @@ const Dashboard = ({ user }) => {
       const lendingsRes = await fetch(`${API_URL}/mylendings`, {
         credentials: "include",
       });
+
+      if (
+        productsRes.status === 401 ||
+        borrowsRes.status === 401 ||
+        lendingsRes.status === 401
+      ) {
+        setSessionExpired(true);
+        return;
+      }
+
+      setSessionExpired(false);
 
       const products = await productsRes.json();
       const borrows = await borrowsRes.json();
@@ -78,6 +91,45 @@ const Dashboard = ({ user }) => {
       setBusyId("");
     }
   };
+
+  const signInAgain = async () => {
+    try {
+      await fetch(`${API_URL}/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+
+    if (onUserUpdate) {
+      onUserUpdate(null);
+    }
+
+    navigate("/login");
+  };
+
+  if (sessionExpired) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
+          <p className="text-lg font-semibold text-gray-900">
+            Your session has expired
+          </p>
+          <p className="text-gray-500 mt-2">
+            Sign in again to see your listed items, what you have borrowed and
+            the requests on your items.
+          </p>
+          <button
+            onClick={signInAgain}
+            className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition"
+          >
+            Sign in again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
