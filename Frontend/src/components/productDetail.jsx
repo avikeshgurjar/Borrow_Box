@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Box, Calendar, User } from "lucide-react";
 import Product3DPreviewer from "../3DPreview.jsx";
 
@@ -7,7 +7,9 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3456/api";
 
 const ProductDetail = ({ user }) => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [product, setProduct] = useState(null);
+  const [borrowDays, setBorrowDays] = useState(3);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [active, setActive] = useState(0);
@@ -27,6 +29,9 @@ const ProductDetail = ({ user }) => {
 
         const data = await response.json();
         setProduct(data);
+        if (data.maxBorrowDays) {
+          setBorrowDays(Math.min(3, data.maxBorrowDays));
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -38,16 +43,29 @@ const ProductDetail = ({ user }) => {
   }, [id]);
 
   const requestBorrow = async () => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
     setRequesting(true);
     setRequestError("");
     setRequestMessage("");
 
     try {
+      const daysToSend = Math.min(
+        Math.max(Number(borrowDays) || 1, 1),
+        product.maxBorrowDays || 30
+      );
+
       const response = await fetch(`${API_URL}/borrows`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ productId: product.id }),
+        body: JSON.stringify({
+          productId: product.id,
+          days: daysToSend,
+        }),
       });
 
       const data = await response.json();
@@ -150,29 +168,52 @@ const ProductDetail = ({ user }) => {
               <p className="mt-4 text-sm text-gray-500">
                 This is your item, so there is nothing to request.
               </p>
-            ) : !user ? (
-              <p className="mt-4 text-sm text-gray-500">
-                <Link to="/login" className="text-indigo-600 font-medium">
-                  Log in
-                </Link>{" "}
-                to ask for this item.
-              </p>
-            ) : product.isAvailable ? (
-              <button
-                onClick={requestBorrow}
-                disabled={requesting || Boolean(requestMessage)}
-                className="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-medium px-4 py-2.5 rounded-xl transition"
-              >
-                {requesting
-                  ? "Sending..."
-                  : requestMessage
-                    ? "Request sent"
-                    : `Request to borrow for ${product.maxBorrowDays} days`}
-              </button>
-            ) : (
+            ) : !product.isAvailable ? (
               <p className="mt-4 text-sm text-gray-500">
                 Someone already has this. Check back once it is returned.
               </p>
+            ) : (
+              <div className="mt-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    How many days do you need this?
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      min="1"
+                      max={product.maxBorrowDays || 30}
+                      value={borrowDays}
+                      onChange={(e) => setBorrowDays(e.target.value)}
+                      className="w-24 px-3 py-2 border border-gray-300 rounded-xl text-center font-bold text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                      required
+                    />
+                    <span className="text-xs text-gray-500">
+                      (Max allowed: {product.maxBorrowDays} {product.maxBorrowDays === 1 ? 'day' : 'days'})
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={requestBorrow}
+                  disabled={requesting || Boolean(requestMessage)}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-medium px-4 py-2.5 rounded-xl transition cursor-pointer"
+                >
+                  {requesting
+                    ? "Sending..."
+                    : requestMessage
+                      ? "Request sent"
+                      : !user
+                        ? `Log in to borrow for ${borrowDays || 1} ${Number(borrowDays) === 1 ? "day" : "days"}`
+                        : `Request to borrow for ${borrowDays || 1} ${Number(borrowDays) === 1 ? "day" : "days"}`}
+                </button>
+
+                {!user && (
+                  <p className="text-xs text-center text-gray-500">
+                    You will be asked to log in first.
+                  </p>
+                )}
+              </div>
             )}
 
             {requestMessage && (
